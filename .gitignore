@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Data and secrets
+*.h5
+*.hdf5
+*.dat
+*.csv
+!examples/sample_input.csv
+.env
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
