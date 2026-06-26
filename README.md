@@ -7,11 +7,11 @@
 
 A lightweight Python pipeline for converting tabular scientific simulation exports into HDF5 archives. Built during a research internship focused on quantum computing workloads and high-performance computing data workflows.
 
-## Overview
+## 📋 Overview
 
 GCE HDF5 Converter reads CSV files containing simulation observables and writes structured HDF5 output suitable for downstream analysis on workstations or supercomputer filesystems. The tool validates input schema, preserves column metadata, and supports optional gzip compression for efficient storage.
 
-## Motivation
+## 💡 Motivation
 
 Large-scale simulation campaigns produce many small text files that are slow to parse and difficult to organize at scale. HDF5 provides a portable binary format with attached metadata, which makes it easier to:
 
@@ -21,7 +21,7 @@ Large-scale simulation campaigns produce many small text files that are slow to 
 
 This project packages that conversion step into a small, scriptable CLI that can be run locally or inside batch jobs.
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Technology |
 |---|---|
@@ -30,7 +30,7 @@ This project packages that conversion step into a small, scriptable CLI that can
 | Numerics | NumPy |
 | HDF5 I/O | h5py |
 
-## Features
+## ✨ Features
 
 - Command-line CSV to HDF5 conversion
 - Input validation for missing files, empty tables, and duplicate columns
@@ -39,7 +39,7 @@ This project packages that conversion step into a small, scriptable CLI that can
 - Structured logging with verbose mode
 - Synthetic sample dataset for quick testing
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 gce-hdf5-converter/
@@ -52,11 +52,11 @@ gce-hdf5-converter/
 └── README.md
 ```
 
-## Installation
+## 📦 Installation
 
 ```bash
-git clone https://github.com/your-username/gce-hdf5-converter.git
-cd gce-hdf5-converter
+git clone https://github.com/arnoldfolarin/hdf5-conversion-script.git
+cd hdf5-conversion-script
 python -m venv .venv
 ```
 
@@ -74,7 +74,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Usage
+## 🚀 Usage
 
 Convert the included sample file:
 
@@ -94,7 +94,7 @@ Custom dataset name:
 python converter.py examples/sample_input.csv -o output/results.h5 --dataset-name observables
 ```
 
-### CLI options
+### ⌨️ CLI options
 
 | Flag | Description |
 |---|---|
@@ -104,7 +104,7 @@ python converter.py examples/sample_input.csv -o output/results.h5 --dataset-nam
 | `--dataset-name` | HDF5 dataset label (default: `data`) |
 | `-v`, `--verbose` | Enable debug logging |
 
-## Sample Output
+## 📊 Sample Output
 
 Example log output:
 
@@ -131,7 +131,7 @@ results.h5
 
 Non-numeric columns such as `run_id` are preserved in metadata but excluded from the numeric dataset array.
 
-## Architecture
+## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
@@ -162,7 +162,7 @@ flowchart LR
     H5Write --> Dataset
 ```
 
-## Future Improvements
+## 🔮 Future Improvements
 
 - Batch conversion for folders of CSV files
 - YAML configuration for column mappings and compression defaults
@@ -170,6 +170,6 @@ flowchart LR
 - Automated pytest coverage for validation edge cases
 - Optional round-trip export back to CSV for verification
 
-## License
+## 📄 License
 
-This project is provided for portfolio and educational use. Add a license file before publishing if you plan to accept external contributions.
+This project is released for portfolio and educational purposes. You may view, reference, and learn from the code, but please do not redistribute it as your own work without attribution.
