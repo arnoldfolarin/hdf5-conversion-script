@@ -1,15 +1,14 @@
 ![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
 ![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)
-![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white)
 ![HDF5](https://img.shields.io/badge/HDF5-%23E76F00.svg?style=for-the-badge&logo=hdf5&logoColor=white)
 
-# GCE HDF5 Converter
+# Simulation HDF5 Converter
 
-A lightweight Python pipeline for converting tabular scientific simulation exports into HDF5 archives. Built during a research internship focused on quantum computing workloads and high-performance computing data workflows.
+A Python pipeline for converting simulation `.dat` exports into grouped HDF5 archives. Built during a research internship focused on quantum computing workloads and high-performance computing data workflows.
 
 ## 📋 Overview
 
-GCE HDF5 Converter reads CSV files containing simulation observables and writes structured HDF5 output suitable for downstream analysis on workstations or supercomputer filesystems. The tool validates input schema, preserves column metadata, and supports optional gzip compression for efficient storage.
+This tool reads simulation `.dat` files (estimator, log, state, and related measurement types), groups them by `RUN_ID`, and writes one structured HDF5 file per run. It supports batch conversion, HDF5-to-`.dat` export, round-trip verification, and optional gzip compression.
 
 ## 💡 Motivation
 
@@ -26,29 +25,34 @@ This project packages that conversion step into a small, scriptable CLI that can
 | Layer | Technology |
 |---|---|
 | Language | Python 3.11+ |
-| Tabular I/O | Pandas |
 | Numerics | NumPy |
 | HDF5 I/O | h5py |
 
 ## ✨ Features
 
-- Command-line CSV to HDF5 conversion
-- Input validation for missing files, empty tables, and duplicate columns
+- Batch `.dat` folder to HDF5 (one `.h5` per `RUN_ID`)
+- Interactive and CLI modes for convert, export, and round-trip
 - Optional gzip compression with shuffle filter
 - Dataset metadata for column names and source file provenance
-- Structured logging with verbose mode
 - Synthetic sample dataset for quick testing
+- Safe publish workflow documented in `docs/PUBLISH.md`
 
 ## 📁 Project Structure
 
 ```
 gce-hdf5-converter/
-├── converter.py              # CLI entry point
-├── utils.py                  # Validation and logging helpers
-├── requirements.txt          # Python dependencies
-├── .gitignore
+├── convert_batch.py          # Batch .dat -> HDF5 CLI
+├── interconvert.py           # dat-to-h5, h5-to-dat, roundtrip
+├── validate_output.py        # Verify grouped HDF5 output
+├── text_io.py                # .dat parsing and batch conversion
+├── hdf5_io.py                # HDF5 read/write helpers
+├── export_io.py              # HDF5 -> .dat export and round-trip compare
+├── cli_prompts.py            # Interactive prompts
+├── requirements.txt
+├── docs/
+│   └── PUBLISH.md            # Safe sync checklist from private dev repo
 ├── examples/
-│   └── sample_input.csv      # Synthetic demo input
+│   └── sample_dat/           # Synthetic demo .dat files (RUN_001)
 └── README.md
 ```
 
@@ -76,99 +80,111 @@ pip install -r requirements.txt
 
 ## 🚀 Usage
 
-Convert the included sample file:
+Convert the included sample folder:
 
 ```bash
-python converter.py examples/sample_input.csv -o output/results.h5
+python convert_batch.py examples/sample_dat output/ --batch-only --no-compression
 ```
 
-With verbose logging and no compression:
+Verify the generated HDF5:
 
 ```bash
-python converter.py examples/sample_input.csv -o output/results.h5 --compression none -v
+python validate_output.py output/RUN_001.h5
 ```
 
-Custom dataset name:
+Convert with the interconvert CLI:
 
 ```bash
-python converter.py examples/sample_input.csv -o output/results.h5 --dataset-name observables
+python interconvert.py dat-to-h5 examples/sample_dat output/ --no-compression
+```
+
+Export HDF5 back to `.dat` files:
+
+```bash
+python interconvert.py h5-to-dat output/RUN_001.h5 exported_dat/
+```
+
+Round-trip test (convert, export, compare):
+
+```bash
+python interconvert.py roundtrip examples/sample_dat --work-dir roundtrip_work --no-compression
+```
+
+Run interactively (no arguments):
+
+```bash
+python convert_batch.py
+python interconvert.py
 ```
 
 ### ⌨️ CLI options
 
-| Flag | Description |
+**`convert_batch.py`**
+
+| Argument / flag | Description |
 |---|---|
-| `input` | Path to input CSV file |
-| `-o`, `--output` | Path to output HDF5 file |
-| `--compression` | `gzip` (default) or `none` |
-| `--dataset-name` | HDF5 dataset label (default: `data`) |
-| `-v`, `--verbose` | Enable debug logging |
+| `input` | Folder with `.dat` files |
+| `output` | Output folder for `.h5` files |
+| `--batch-only` | Skip direction menu; convert immediately |
+| `--compression` | `gzip-1`, `gzip`, or `gzip-9` |
+| `--no-compression` | Disable compression |
 
-## 📊 Sample Output
+**`interconvert.py` subcommands**
 
-Example log output:
+| Subcommand | Description |
+|---|---|
+| `dat-to-h5` | Convert `.dat` folder to HDF5 |
+| `h5-to-dat` | Export one `.h5` file to `.dat` files |
+| `roundtrip` | Convert, export, and compare byte-for-byte |
+
+## 📊 Sample Input Format
+
+Simulation files use the naming pattern:
 
 ```
-2026-06-25 10:15:02 [INFO] Reading CSV: examples/sample_input.csv
-2026-06-25 10:15:02 [INFO] Wrote HDF5 file: output/results.h5
-2026-06-25 10:15:02 [INFO] Compression: gzip
+sim-<type>-<T>-<L>-<u>-<t>-<RUN_ID>.dat
 ```
 
-Example HDF5 layout:
+Numeric files include a header comment and column labels:
 
 ```
-results.h5
-├── attrs
-│   ├── source_file: sample_input.csv
-│   ├── row_count: 10
-│   ├── column_count: 4
-│   └── converter_version: 1.0.0
-└── data                      # shape (10, 4), float64
-    └── attrs
-        ├── columns: [timestep, energy, magnetization, acceptance_rate]
-        └── source_columns: [run_id, timestep, energy, magnetization, acceptance_rate]
+# RUN_ID: RUN_001
+#               K               V           V_ext           V_int               E
+ 2.99237404E+02 -4.17045815E+02  0.00000000E+00 -4.14177231E+02 -1.17808411E+02
 ```
-
-Non-numeric columns such as `run_id` are preserved in metadata but excluded from the numeric dataset array.
 
 ## 🏗️ Architecture
 
 ```mermaid
 flowchart LR
     subgraph input [Input]
-        CSV[CSV file]
+        DatFolder[.dat folder]
     end
 
-    subgraph validation [Validation]
-        PathCheck[validate_input_path]
-        SchemaCheck[validate_csv]
-    end
-
-    subgraph transform [Transform]
-        PandasRead[pandas.read_csv]
-        NumericSelect[select numeric columns]
+    subgraph parse [Parse]
+        Filename[parse_sim_filename]
+        GroupBy[Group by RUN_ID]
+        Types[estimator log state isf pair planewind]
     end
 
     subgraph output [Output]
-        H5Write[h5py.File write]
-        Dataset[data dataset + attrs]
+        H5Write[save_grouped]
+        H5File[RUN_001.h5]
     end
 
-    CSV --> PathCheck
-    PathCheck --> SchemaCheck
-    SchemaCheck --> PandasRead
-    PandasRead --> NumericSelect
-    NumericSelect --> H5Write
-    H5Write --> Dataset
+    DatFolder --> Filename
+    Filename --> GroupBy
+    GroupBy --> Types
+    Types --> H5Write
+    H5Write --> H5File
 ```
 
 ## 🔮 Future Improvements
 
-- Batch conversion for folders of CSV files
-- YAML configuration for column mappings and compression defaults
+- YAML configuration for compression defaults
 - Parquet export for analytics pipelines
 - Automated pytest coverage for validation edge cases
-- Optional round-trip export back to CSV for verification
+- Nested multi-run HDF5 layout for combined archives
 
 ## 📄 License
 
